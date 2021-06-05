@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+            http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+    <!--开启注解扫描 -->
+    <context:annotation-config/>
+
+    <context:component-scan base-package="com.muxi.sample.spring"/>
+
+    <!--引入JDBC的配置文件 -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:jdbc.properties</value>
+                <value>classpath:nais-jdbc.properties</value>
+            </list>
+        </property>
+    </bean>
+    <!-- 配置write数据源-->
+    <bean id="dataSourceW" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="${driver}"/>
+        <property name="url" value="${url}"/>
+        <property name="username" value="${username}"/>
+        <property name="password" value="${password}"/>
+    </bean>
+
+     <!--配置read数据源 -->
+    <bean id="DataSourceR" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="${nais.driver}"/>
+        <property name="url" value="${nais.url}"/>
+        <property name="username" value="${nais.username}"/>
+        <property name="password" value="${nais.password}"/>
+    </bean>
+
+
+    <bean id="sqlSessionFactoryR" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="DataSourceR"/>
+        <property name="mapperLocations" value="spring/mapper/read/*Mapper.xml"/>
+    </bean>
+
+    <bean id="SqlSessionFactoryW" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSourceW"/>
+        <property name="mapperLocations" value="spring/mapper/write/*Mapper.xml"/>
+    </bean>
+
+    <bean  class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--注意这里对于不同的数据源需要使用不同的包，否则会导致数据源映射错误 -->
+        <property name="basePackage" value="com.muxi.sample.spring.dao.read"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactoryR"></property>
+    </bean>
+
+    <bean  class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.muxi.sample.spring.dao.write"/>
+        <property name="sqlSessionFactoryBeanName" value="SqlSessionFactoryW"></property>
+    </bean>
+</beans>
